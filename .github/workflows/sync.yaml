@@ -5,6 +5,10 @@ on:
     - cron: '0 0 * * *'  # Exécution quotidienne à minuit
   workflow_dispatch:  # Permet l'exécution manuelle
 
+permissions:
+  contents: write
+  workflows: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -35,6 +39,8 @@ jobs:
 
     - name: Update sync branch
       if: steps.check_changes.outputs.changes == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
       run: |
         git checkout -B sync-fork upstream/main
         git push -f origin sync-fork
