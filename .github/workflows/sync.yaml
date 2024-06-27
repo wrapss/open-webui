@@ -3,11 +3,7 @@ name: Sync Fork
 on:
   schedule:
     - cron: '0 0 * * *'  # Exécution quotidienne à minuit
-  workflow_dispatch:  # Permet l'exécution manuelle
-
-permissions:
-  contents: write
-  workflows: write
+  workflow_dispatch: 
 
 jobs:
   sync:
