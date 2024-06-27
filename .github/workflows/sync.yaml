@@ -31,33 +31,21 @@ jobs:
     - name: Check for changes
       id: check_changes
       run: |
-        git fetch upstream
-        if git diff --quiet upstream/main origin/main; then
-          echo "No changes detected"
-          echo "changes=false" >> $GITHUB_OUTPUT
-        else
-          echo "Changes detected"
-          echo "changes=true" >> $GITHUB_OUTPUT
-          git merge upstream/main
-        fi
+        git diff --quiet upstream/main origin/main || echo "changes=true" >> $GITHUB_OUTPUT
 
-    - name: Debug output
-      run: |
-        echo "Changes detected: ${{ steps.check_changes.outputs.changes }}"
-
-    - name: Push changes if any
+    - name: Update sync branch
       if: steps.check_changes.outputs.changes == 'true'
       run: |
-        git push origin main
+        git checkout -B sync-fork upstream/main
+        git push -f origin sync-fork
 
-    - name: Create Pull Request
+    - name: Create or Update Pull Request
       if: steps.check_changes.outputs.changes == 'true'
-      uses: peter-evans/create-pull-request@v5
+      uses: peter-evans/create-pull-request@v3
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        base: main
+        token: ${{ secrets.WORKFLOW_TOKEN }}
+        base: main  # Assurez-vous que c'est bien le nom de votre branche principale
         branch: sync-fork
         title: 'Sync fork with upstream repository'
         body: 'This PR syncs changes from the upstream repository. Please review and merge.'
         commit-message: 'Sync fork with upstream repository'
-        delete-branch: true
