@@ -31,11 +31,28 @@ jobs:
     - name: Check for changes
       id: check_changes
       run: |
-        git diff --quiet upstream/main origin/main || echo "changes=true" >> $GITHUB_OUTPUT
+        git fetch upstream
+        if git diff --quiet upstream/main origin/main; then
+          echo "No changes detected"
+          echo "changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "Changes detected"
+          echo "changes=true" >> $GITHUB_OUTPUT
+          git merge upstream/main
+        fi
+
+    - name: Debug output
+      run: |
+        echo "Changes detected: ${{ steps.check_changes.outputs.changes }}"
+
+    - name: Push changes if any
+      if: steps.check_changes.outputs.changes == 'true'
+      run: |
+        git push origin main
 
     - name: Create Pull Request
       if: steps.check_changes.outputs.changes == 'true'
-      uses: peter-evans/create-pull-request@v3
+      uses: peter-evans/create-pull-request@v5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         base: main
