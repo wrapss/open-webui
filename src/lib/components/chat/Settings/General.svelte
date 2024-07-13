@@ -32,7 +32,9 @@
 			saveSettings({ notificationEnabled: notificationEnabled });
 		} else {
 			toast.error(
-				'Response notifications cannot be activated as the website permissions have been denied. Please visit your browser settings to grant the necessary access.'
+				$i18n.t(
+					'Response notifications cannot be activated as the website permissions have been denied. Please visit your browser settings to grant the necessary access.'
+				)
 			);
 		}
 	};
@@ -55,6 +57,8 @@
 		stop: null,
 		tfs_z: null,
 		num_ctx: null,
+		num_batch: null,
+		num_keep: null,
 		max_tokens: null
 	};
 
@@ -91,6 +95,8 @@
 		}
 
 		if (themeToApply === 'dark' && !_theme.includes('oled')) {
+			document.documentElement.style.setProperty('--color-gray-800', '#333');
+			document.documentElement.style.setProperty('--color-gray-850', '#262626');
 			document.documentElement.style.setProperty('--color-gray-900', '#171717');
 			document.documentElement.style.setProperty('--color-gray-950', '#0d0d0d');
 		}
@@ -114,6 +120,8 @@
 		theme.set(_theme);
 		localStorage.setItem('theme', _theme);
 		if (_theme.includes('oled')) {
+			document.documentElement.style.setProperty('--color-gray-800', '#101010');
+			document.documentElement.style.setProperty('--color-gray-850', '#050505');
 			document.documentElement.style.setProperty('--color-gray-900', '#000000');
 			document.documentElement.style.setProperty('--color-gray-950', '#000000');
 			document.documentElement.classList.add('dark');
@@ -308,6 +316,8 @@
 						top_p: params.top_p !== null ? params.top_p : undefined,
 						tfs_z: params.tfs_z !== null ? params.tfs_z : undefined,
 						num_ctx: params.num_ctx !== null ? params.num_ctx : undefined,
+						num_batch: params.num_batch !== null ? params.num_batch : undefined,
+						num_keep: params.num_keep !== null ? params.num_keep : undefined,
 						max_tokens: params.max_tokens !== null ? params.max_tokens : undefined,
 						use_mmap: params.use_mmap !== null ? params.use_mmap : undefined,
 						use_mlock: params.use_mlock !== null ? params.use_mlock : undefined,
