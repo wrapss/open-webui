@@ -720,16 +720,9 @@ class ChatCompletionMiddleware(BaseHTTPMiddleware):
             if isinstance(response, StreamingResponse):
                 # If it's a streaming response, inject it as SSE event or NDJSON line
                 content_type = response.headers.get("Content-Type")
-                if "text/event-stream" in content_type:
-                    return StreamingResponse(
-                        self.openai_stream_wrapper(response.body_iterator, data_items),
-                    )
-                if "application/x-ndjson" in content_type:
-                    return StreamingResponse(
+                return StreamingResponse(
                         self.ollama_stream_wrapper(response.body_iterator, data_items),
                     )
-
-                return response
             else:
                 return response
 
