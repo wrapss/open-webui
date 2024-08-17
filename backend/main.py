@@ -51,7 +51,7 @@ from apps.webui.internal.db import Session
 
 
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
 from apps.webui.models.auths import Auths
 from apps.webui.models.models import Models
@@ -116,6 +116,7 @@ from config import (
     WEBUI_SECRET_KEY,
     WEBUI_SESSION_COOKIE_SAME_SITE,
     WEBUI_SESSION_COOKIE_SECURE,
+    ENABLE_ADMIN_CHAT_ACCESS,
     AppConfig,
 )
 
@@ -950,7 +951,7 @@ async def get_all_models():
 
     custom_models = Models.get_all_models()
     for custom_model in custom_models:
-        if custom_model.base_model_id == None:
+        if custom_model.base_model_id is None:
             for model in models:
                 if (
                     custom_model.id == model["id"]
@@ -1655,7 +1656,7 @@ async def get_pipelines_list(user=Depends(get_admin_user)):
     urlIdxs = [
         idx
         for idx, response in enumerate(responses)
-        if response != None and "pipelines" in response
+        if response is not None and "pipelines" in response
     ]
 
     return {
@@ -1716,7 +1717,7 @@ async def upload_pipeline(
                 res = r.json()
                 if "detail" in res:
                     detail = res["detail"]
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(
@@ -1762,7 +1763,7 @@ async def add_pipeline(form_data: AddPipelineForm, user=Depends(get_admin_user))
                 res = r.json()
                 if "detail" in res:
                     detail = res["detail"]
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(
@@ -1804,7 +1805,7 @@ async def delete_pipeline(form_data: DeletePipelineForm, user=Depends(get_admin_
                 res = r.json()
                 if "detail" in res:
                     detail = res["detail"]
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(
@@ -1837,7 +1838,7 @@ async def get_pipelines(urlIdx: Optional[int] = None, user=Depends(get_admin_use
                 res = r.json()
                 if "detail" in res:
                     detail = res["detail"]
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(
@@ -1852,7 +1853,6 @@ async def get_pipeline_valves(
     pipeline_id: str,
     user=Depends(get_admin_user),
 ):
-    models = await get_all_models()
     r = None
     try:
         url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
@@ -1876,7 +1876,7 @@ async def get_pipeline_valves(
                 res = r.json()
                 if "detail" in res:
                     detail = res["detail"]
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(
@@ -1891,8 +1891,6 @@ async def get_pipeline_valves_spec(
     pipeline_id: str,
     user=Depends(get_admin_user),
 ):
-    models = await get_all_models()
-
     r = None
     try:
         url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
@@ -1915,7 +1913,7 @@ async def get_pipeline_valves_spec(
                 res = r.json()
                 if "detail" in res:
                     detail = res["detail"]
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(
@@ -1931,8 +1929,6 @@ async def update_pipeline_valves(
     form_data: dict,
     user=Depends(get_admin_user),
 ):
-    models = await get_all_models()
-
     r = None
     try:
         url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
@@ -1960,7 +1956,7 @@ async def update_pipeline_valves(
                 res = r.json()
                 if "detail" in res:
                     detail = res["detail"]
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(
@@ -1994,6 +1990,7 @@ async def get_app_config():
             "enable_image_generation": images_app.state.config.ENABLED,
             "enable_community_sharing": webui_app.state.config.ENABLE_COMMUNITY_SHARING,
             "enable_admin_export": ENABLE_ADMIN_EXPORT,
+            "enable_admin_chat_access": ENABLE_ADMIN_CHAT_ACCESS,
         },
         "audio": {
             "tts": {
@@ -2023,7 +2020,7 @@ async def get_model_filter_config(user=Depends(get_admin_user)):
 
 class ModelFilterConfigForm(BaseModel):
     enabled: bool
-    models: List[str]
+    models: list[str]
 
 
 @app.post("/api/config/model/filter")
@@ -2061,7 +2058,7 @@ async def update_webhook_url(form_data: UrlForm, user=Depends(get_admin_user)):
 
 
 @app.get("/api/version")
-async def get_app_config():
+async def get_app_version():
     return {
         "version": VERSION,
     }
@@ -2084,7 +2081,7 @@ async def get_app_latest_release_version():
                 latest_version = data["tag_name"]
 
                 return {"current": VERSION, "latest": latest_version[1:]}
-    except aiohttp.ClientError as e:
+    except aiohttp.ClientError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=ERROR_MESSAGES.RATE_LIMIT_EXCEEDED,
@@ -2154,7 +2151,8 @@ async def oauth_callback(provider: str, request: Request, response: Response):
         log.warning(f"OAuth callback failed, sub is missing: {user_data}")
         raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
     provider_sub = f"{provider}@{sub}"
-    email = user_data.get("email", "").lower()
+    email_claim = webui_app.state.config.OAUTH_EMAIL_CLAIM
+    email = user_data.get(email_claim, "").lower()
     # We currently mandate that email addresses are provided
     if not email:
         log.warning(f"OAuth callback failed, email is missing: {user_data}")
